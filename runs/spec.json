@@ -1,0 +1,387 @@
+{
+  "screen": {
+    "name": "Billing Manager (claim selection, batch actions and claim validation log)",
+    "purpose": "Lets a billing user filter encounters that are ready to bill, select one or more claims, then validate or generate electronic (X12 837) or paper (HCFA/CMS 1500) claims. Validation runs a per-claim rule check and prints a plain-text log of missing or invalid data without changing the claim's billing status.",
+    "layout": [
+      "Context (observed): reached after login and the main shell. At login a modal titled 'Product Registration' asks for an email ('email' placeholder) and offers 'Submit' and 'No Thanks' buttons plus a close X. The main shell has a top menu (Calendar, Flow Board, Recall Board, Messages, Patient/Client, Fees, Modules, Procedures, Administration, Reports, Miscellaneous, Popups, About, and the logged-in user name), a 'Patient: None' indicator, a patient search box with the placeholder 'Search by any demographics' (truncated on screen), and a row of document tabs. Each tab shows 'Loading...' until its content arrives and has refresh, lock and close icons. Default tabs are Calendar and Message Center.",
+      "Page header: title 'Billing Manager' with an expand/fullscreen icon and a show/hide (eye) icon.",
+      "Panel 'Choose Criteria': a 'Select list:' list box with the options Date of Service, Date of Entry, Date of Billing, Claim Type, Patient Name, Patient Id, Insurance Company, Encounter.",
+      "Panel 'Current Criteria': label 'Criteria Set To:' with a red circled-X clear button, and a read-only box listing the active criteria. The defaults are 'Date of Service = Today' and 'Billing Status = Unbilled'.",
+      "Panel 'Select Action': links 'Update List' (with an info icon), 'Export OFX', 'View Printable Report', 'End Of Day Report - Totals' (with a checkbox), 'View Log', 'Tab Log' (plain text), 'Select All', 'Clear Log' (plain text).",
+      "Action toolbar: 'X12 OPTIONS' dropdown, 'HCFA FORM' dropdown, 'Mark as Cleared' button (download icon), 'Re-Open' button (undo icon), and the text inputs 'CMS 1500 Margins Left:' (default 24) and 'Top:' (default 20).",
+      "Above the result list on the right: '(Expand All)' and '(Collapse All)' links.",
+      "Result list, one block per encounter/claim: the patient name as a link in red/salmon, followed by '(pid-encounter)', for example '(1-1)'. Below it are the buttons 'Encounter <YYYY-MM-DD>', 'Patient' and 'MBO', and an '(Expand)' link. A 'Bill:' dropdown lists the payer to bill as '<rank>: <insurance company>', for example 'primary: Spike Health Plan'. An 'X12:' dropdown lists the X12 partner/clearinghouse, for example 'Spike Clearinghouse'.",
+      "Billing lines inside each block, grouped by code type (label shown once per group): 'HCPCS:' A0425, then G0008, and 'ICD10:' Z00.00. Each line shows the provider name highlighted in yellow ('Administrator') and the service date (2026-11-05). The first line of the claim has a selection checkbox at the far right."
+    ]
+  },
+  "data_model": {
+    "claim_key": "A claim is identified as '<patient id>-<encounter id>' (observed: '1-1'). The log refers to it as 'Claim 1-1'.",
+    "encounter": {
+      "fields": [
+        "patient id",
+        "encounter id",
+        "date of service",
+        "date of entry",
+        "date of billing",
+        "billing status (Unbilled / billed / cleared)",
+        "claim type",
+        "billing facility",
+        "service facility",
+        "rendering provider"
+      ],
+      "notes": "Observed: the default list shows encounters whose date of service is today and whose billing status is Unbilled."
+    },
+    "billing_line": {
+      "fields": [
+        "code type (HCPCS/CPT, ICD10, ...)",
+        "code",
+        "modifier",
+        "units",
+        "fee/charge",
+        "justification (link from a procedure to one or more diagnosis codes)",
+        "provider",
+        "date"
+      ],
+      "notes": "Observed: two HCPCS procedures (A0425, G0008) and one ICD10 diagnosis (Z00.00). The procedures carried no charge and no diagnosis justification."
+    },
+    "patient": {
+      "fields": [
+        "last name",
+        "first name",
+        "DOB",
+        "sex",
+        "street",
+        "city",
+        "state",
+        "zip"
+      ],
+      "notes": "In log headers the patient name is shown upper-cased as 'FIRST LAST' (observed: 'TEST PATIENT')."
+    },
+    "insurance_policy": {
+      "fields": [
+        "rank (primary/secondary/tertiary)",
+        "insurance company (payer)",
+        "policy number",
+        "group number",
+        "subscriber/insured last name",
+        "first name",
+        "DOB",
+        "sex",
+        "street",
+        "city",
+        "state",
+        "zip",
+        "relationship of subscriber to patient"
+      ],
+      "notes": "Observed: the claim billed 'primary: Spike Health Plan' while every insured field was empty."
+    },
+    "payer (insurance company)": {
+      "fields": [
+        "name",
+        "payer ID (electronic id)",
+        "street",
+        "city",
+        "state",
+        "zip"
+      ],
+      "notes": "Observed: payer ID, street, city and state were all missing. The payer name inside the payer-ID message printed as empty."
+    },
+    "billing facility": {
+      "fields": [
+        "name",
+        "NPI",
+        "ETIN / federal tax id",
+        "street",
+        "city",
+        "state",
+        "zip"
+      ],
+      "notes": "Observed: NPI, street, city, state and ETIN/NPI were all missing."
+    },
+    "rendering provider (user)": {
+      "fields": [
+        "last name",
+        "first name",
+        "NPI",
+        "taxonomy",
+        "flag/setting indicating whether billing is done under a group"
+      ],
+      "notes": "Observed: provider 'ADMINISTRATOR,' (last name upper-cased, comma, empty first name) had an invalid/absent NPI and was flagged as billing under a group."
+    },
+    "x12_partner": {
+      "fields": [
+        "name",
+        "sender/receiver ids"
+      ],
+      "notes": "Chosen per claim from the 'X12:' dropdown (observed: 'Spike Clearinghouse')."
+    }
+  },
+  "interactions": [
+    {
+      "step": 1,
+      "action": "User loads the login page.",
+      "result": "The 'Product Registration' modal appears over a dimmed login form (Username, Password, Language). It asks for an email and offers 'Submit' / 'No Thanks'.",
+      "status": "observed"
+    },
+    {
+      "step": 2,
+      "action": "User dismisses the registration modal and logs in.",
+      "result": "The main shell opens with two tabs that each show 'Loading...', then become 'Calendar' (day view for Thursday, November 5, 2026, provider Administrator, 15-minute slots from 8:00) and 'Message Center'.",
+      "status": "observed"
+    },
+    {
+      "step": 3,
+      "action": "User opens the Billing Manager (most likely from the Fees menu; the menu click itself was not visible).",
+      "result": "Billing Manager loads with the default criteria 'Date of Service = Today' and 'Billing Status = Unbilled'. It lists one claim: Test Patient (1-1), encounter 2026-11-05, Bill 'primary: Spike Health Plan', X12 'Spike Clearinghouse', lines A0425, G0008 and Z00.00. Before any selection, 'Mark as Cleared' and 'Re-Open' look enabled.",
+      "status": "observed"
+    },
+    {
+      "step": 4,
+      "action": "User ticks the claim's checkbox.",
+      "result": "The checkbox shows checked. The page dims briefly. 'Re-Open' appears greyed out while 'Mark as Cleared' stays active, which suggests the toolbar reacts to the selection or the page is busy.",
+      "status": "observed"
+    },
+    {
+      "step": 5,
+      "action": "User picks a validate action from 'X12 OPTIONS' (the menu item was not visible; the log wording points to a validate-only mode).",
+      "result": "The page darkens under a processing overlay, then a plain-text log page/window appears with the per-claim validation messages. The billing status does not change ('existing claim status is not altered').",
+      "status": "observed"
+    },
+    {
+      "step": 6,
+      "action": "Log stays on screen across frames 8 to 10.",
+      "result": "The content is identical in all three frames. No buttons appear on the log view.",
+      "status": "observed"
+    },
+    {
+      "step": 7,
+      "action": "User chooses a generate (non-validate) option from X12 OPTIONS or HCFA FORM.",
+      "result": "Expected: the same rule messages appear, an X12 file or a PDF is produced, and the claim moves to billed status. The log line would then not say 'existing claim status is not altered'.",
+      "status": "inferred (the 'Validating ... not altered' wording implies a separate generate mode that does alter status)"
+    },
+    {
+      "step": 8,
+      "action": "User clicks 'Mark as Cleared' with claims selected.",
+      "result": "Expected: the selected claims are marked billed/cleared without generating output and drop out of the 'Unbilled' list.",
+      "status": "inferred (button label and the presence of 'Re-Open')"
+    },
+    {
+      "step": 9,
+      "action": "User clicks 'Re-Open' on a billed claim.",
+      "result": "Expected: the claim's billing status goes back to Unbilled.",
+      "status": "inferred"
+    },
+    {
+      "step": 10,
+      "action": "User clicks 'View Log'.",
+      "result": "Expected: the most recent processing log (like the one shown) is displayed again. 'Clear Log' empties it.",
+      "status": "inferred"
+    },
+    {
+      "step": 11,
+      "action": "User picks an item in 'Select list' and sets a value, then clicks 'Update List'.",
+      "result": "Expected: the criterion is added to 'Current Criteria' and the result list refreshes. The red X clears the criteria.",
+      "status": "inferred"
+    }
+  ],
+  "validation_rules": [
+    {
+      "id": "R01",
+      "when": "Always, first line for each selected claim when running in validate-only mode.",
+      "message": "Validating Claim 1-1 existing claim status is not altered.",
+      "status": "observed"
+    },
+    {
+      "id": "R02",
+      "when": "Always, second line for each claim. Format: 'Generating claim <pid>-<enc> for <FIRST LAST upper-cased> on <YYYY-MM-DD HH:MM>.' The timestamp is the run time, not the date of service.",
+      "message": "Generating claim 1-1 for TEST PATIENT on 2026-11-07 06:53.",
+      "status": "observed"
+    },
+    {
+      "id": "R03",
+      "when": "Billing facility NPI is empty.",
+      "message": "*** Billing facility has no NPI.",
+      "status": "observed"
+    },
+    {
+      "id": "R04",
+      "when": "Billing facility street is empty.",
+      "message": "*** Billing facility has no street.",
+      "status": "observed"
+    },
+    {
+      "id": "R05",
+      "when": "Billing facility city is empty.",
+      "message": "*** Billing facility has no city.",
+      "status": "observed"
+    },
+    {
+      "id": "R06",
+      "when": "Billing facility state is empty.",
+      "message": "*** Billing facility has no state.",
+      "status": "observed"
+    },
+    {
+      "id": "R07",
+      "when": "Billing facility has neither a usable NPI nor an ETIN/tax id. This is a separate check that fires in addition to R03.",
+      "message": "*** No billing facility NPI and/or ETIN.",
+      "status": "observed"
+    },
+    {
+      "id": "R08",
+      "when": "Billing facility zip is empty or not 5/9 digits.",
+      "message": "*** Billing facility has no zip. (exact wording unknown)",
+      "status": "inferred (the street/city/state pattern almost certainly continues to zip; it did not print, so zip may have been present or zip is not checked)"
+    },
+    {
+      "id": "R09",
+      "when": "Insured (subscriber) last name is empty on the payer being billed.",
+      "message": "*** Missing insured last name.",
+      "status": "observed"
+    },
+    {
+      "id": "R10",
+      "when": "Insured first name is empty.",
+      "message": "*** Missing insured first name.",
+      "status": "observed"
+    },
+    {
+      "id": "R11",
+      "when": "Policy number is empty.",
+      "message": "*** Missing policy number.",
+      "status": "observed"
+    },
+    {
+      "id": "R12",
+      "when": "Insured street is empty.",
+      "message": "*** Missing insured street.",
+      "status": "observed"
+    },
+    {
+      "id": "R13",
+      "when": "Insured city is empty.",
+      "message": "*** Missing insured city.",
+      "status": "observed"
+    },
+    {
+      "id": "R14",
+      "when": "Insured state is empty.",
+      "message": "*** Missing insured state.",
+      "status": "observed"
+    },
+    {
+      "id": "R15",
+      "when": "Insured date of birth is empty.",
+      "message": "*** Missing insured DOB.",
+      "status": "observed"
+    },
+    {
+      "id": "R16",
+      "when": "Insured sex is empty.",
+      "message": "*** Missing insured sex.",
+      "status": "observed"
+    },
+    {
+      "id": "R17",
+      "when": "Insured zip is empty.",
+      "message": "*** Missing insured zip. (exact wording unknown)",
+      "status": "inferred (same address pattern as R12-R14; it did not fire, so zip may be validated elsewhere or not at all)"
+    },
+    {
+      "id": "R18",
+      "when": "The payer (insurance company) has no electronic payer ID. The message embeds the payer name inside single quotes. QUIRK: when the payer name resolves empty, the line ends right after the opening quote with no closing quote, period or line break, so the next message is glued onto the same line.",
+      "message": "*** Payer ID is missing for payer '",
+      "status": "observed (rendered as \"*** Payer ID is missing for payer '*** Missing payer street.\")"
+    },
+    {
+      "id": "R19",
+      "when": "Payer street is empty.",
+      "message": "*** Missing payer street.",
+      "status": "observed"
+    },
+    {
+      "id": "R20",
+      "when": "Payer city is empty.",
+      "message": "*** Missing payer city.",
+      "status": "observed"
+    },
+    {
+      "id": "R21",
+      "when": "Payer state is empty.",
+      "message": "*** Missing payer state.",
+      "status": "observed"
+    },
+    {
+      "id": "R22",
+      "when": "The sum of charges on the claim's procedure lines is zero (procedure lines exist but no fee was entered).",
+      "message": "*** This claim has no charges!",
+      "status": "observed"
+    },
+    {
+      "id": "R23",
+      "when": "The rendering provider is configured to bill under a group or organization rather than individually. This is a warning: processing continues.",
+      "message": "*** Rendering provider is billing under a group.",
+      "status": "observed"
+    },
+    {
+      "id": "R24",
+      "when": "The rendering provider's NPI is missing or invalid, so the rendering-provider segment (X12 loop 2310B) is left out. The provider name is formatted 'LAST, FIRST' in upper case; with an empty first name it prints as 'ADMINISTRATOR,'.",
+      "message": "*** Skipping 2310B because ADMINISTRATOR, has invalid NPI.",
+      "status": "observed"
+    },
+    {
+      "id": "R25",
+      "when": "A procedure line has no linked diagnosis (justification). It fires once per unjustified procedure code, in billing-line order. Diagnosis lines themselves are not checked.",
+      "message": "*** Procedure 'A0425' is not justified!",
+      "status": "observed (also printed for 'G0008')"
+    },
+    {
+      "id": "R26",
+      "when": "The subscriber relationship is not 'self' (for example spouse or child). Insured name/address/DOB/sex are then taken from the subscriber fields on the policy and checked there; with relationship 'self' they may default to the patient's demographics, which would stop R09-R16 from firing when patient data is complete.",
+      "message": "Same 'Missing insured ...' messages as R09-R16.",
+      "status": "inferred (claims distinguish insured from patient; not exercised)"
+    },
+    {
+      "id": "R27",
+      "when": "Patient demographics needed on a claim are missing when the patient is not the insured (patient name, DOB, sex, address).",
+      "message": "*** Missing patient <field>. (exact wording unknown)",
+      "status": "inferred (parallel to the insured checks; not printed here, possibly because the patient record was complete or the relationship was self)"
+    },
+    {
+      "id": "R28",
+      "when": "The claim is billed to a secondary or tertiary payer. Expected checks: the primary payer's adjudication/payment data exists, and the secondary payer's insured/payer fields are validated with the same rules.",
+      "message": "Unknown wording",
+      "status": "inferred (the 'Bill:' dropdown shows a rank prefix, so other ranks are possible)"
+    },
+    {
+      "id": "R29",
+      "when": "A referring or ordering provider is set but lacks an NPI. By analogy with R24, the matching segment would be skipped with a similar message.",
+      "message": "*** Skipping <loop> because <PROVIDER NAME>, has invalid NPI. (pattern)",
+      "status": "inferred (R24 message template)"
+    },
+    {
+      "id": "R30",
+      "when": "The service facility (place of service) is missing an address or NPI.",
+      "message": "Unknown wording, likely '*** Service facility has no ...' or similar",
+      "status": "inferred (billing facility checks exist; a separate service location is normal on claims)"
+    },
+    {
+      "id": "R31",
+      "when": "No claim checkbox is selected when an X12 or HCFA action is triggered.",
+      "message": "Unknown (probably an alert asking to select at least one claim)",
+      "status": "inferred (not exercised)"
+    },
+    {
+      "id": "R32",
+      "when": "None of the validation messages blocks the run in validate mode. All checks run and each failure is listed. Messages are informational and prefixed with '*** '.",
+      "message": "n/a",
+      "status": "observed (21 errors listed, no abort)"
+    }
+  ],
+  "output_format": "A plain-text log, one message per line, shown as unstyled text on a blank page/window after processing. Per claim, the order is fixed: (1) 'Validating Claim <pid>-<enc> existing claim status is not altered.' (validate mode only); (2) 'Generating claim <pid>-<enc> for <PATIENT NAME UPPER> on <YYYY-MM-DD HH:MM>.'; (3) billing facility checks: NPI, street, city, state, then the combined NPI/ETIN check; (4) insured checks: last name, first name, policy number, street, city, state, DOB, sex; (5) payer checks: payer ID, street, city, state; (6) 'This claim has no charges!'; (7) rendering provider checks: billing under a group, then 'Skipping 2310B because <LAST>, <FIRST> has invalid NPI.'; (8) one 'Procedure '<code>' is not justified!' line per unjustified procedure, in line order. Every error line starts with '*** '. Lines end with '.' or '!' as quoted. QUIRKS: (a) the payer-ID line embeds the payer name in single quotes, and when the name is empty the line stops after the opening quote with no closing quote or newline, so the following '*** Missing payer street.' is concatenated on the same line; the log therefore has 21 lines for 22 messages; (b) the provider name is printed as 'LAST, FIRST' upper-cased, leaving a trailing comma when the first name is empty ('ADMINISTRATOR,'); (c) the log ends with blank trailing line(s); (d) the 'Generating ... on' timestamp is the time of the run: the on-screen frames showed '2026-11-05 02:19' and the saved log showed '2026-11-07 06:53' for the same claim, so the saved log came from a later run with identical messages.",
+  "observer": {
+    "model": "claude (claude -p)",
+    "inputs": "10 frames + log text",
+    "when": "2026-11-07T19:05:23.047Z"
+  }
+}

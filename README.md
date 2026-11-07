@@ -1,0 +1,60 @@
+# Resurrect
+
+![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
+![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
+
+**Record yourself using an old app. Resurrect rebuilds the screen clean-room and proves every behavior matches the original before it ships.**
+
+Built at the AIE Code Summit Hackathon, Sat Nov 7 2026. Tracks: Software Archaeology + The System That Gets Better.
+Not affiliated with the OpenEMR Foundation.
+
+## How it works
+
+```
+recording ──► Observer ──spec.json──► │ WALL │ ──► clean-room Builder ──► rebuild/runN
+ (dirty room)  (Claude, sees video)   │linter│     (isolated claude -p,        │
+                                      │ +log │      sees only spec + data)     ▼
+                 behavior-only feedback ◄──────────────────────────────── Verifier
+                                                    (Playwright replay vs the ORIGINAL app's behavior;
+                                                     8 feedback rules + 4 held-out rules + line equivalence)
+```
+
+- **Observer** (`observer/observe.mjs`): frames from the 6-second recording + the app's end-of-run log → a behavior-only spec with every rule marked *observed* or *inferred*. No product name, code, paths or images (linted).
+- **Wall** (`lib/wall.mjs`, `wall.log`): every artifact that crosses into the clean room is linted and logged with its sha256, plus the Builder's exact prompt and input/output hashes.
+- **Clean-room Builder** (`builder/build.mjs`): a separate `claude -p` in `/tmp/cleanroom-runN/` that holds only `spec.json`, `claim.json`, `replay-contract.md` (+ `feedback.json` from run 2). Tools: Read/Write/Edit only; Read is denied on the repo and home folders; user settings are not loaded. The session that built this harness has read the held-out rules, so it never writes the rebuild.
+- **Verifier** (`verifier/verify.mjs`): replays the recorded flow (select claim → generate claim file → validate only → read log) against the rebuild in three scenarios, scores by rule (meaning, not string), and measures line-level equivalence with what the original app printed in the same scenarios (`verifier/ground-truth/`). Feedback that crosses back is behavior-only; held-out rules never cross.
+- **Fetch.ai agent** (`agent/verifier_agent.py`): the Verifier as a uAgent with the Agent Chat Protocol on Agentverse. From ASI:One: `loop` runs the next Builder run and verifies it, `verify N`, `status`, `wall`.
+
+## Results
+
+See the scoreboard in `runs/` (`runs/runN/score.json`) — filled in below during the event.
+
+## Fetch.ai agent
+
+| Agent | Address | Role |
+|---|---|---|
+| resurrect-verifier | `agent1qd2g8tfg3xfjmmnddlmz75rr5znealnttkataz58tjhxwh2hqs6txsgclsl` | Runs the Verifier / clean-room loop on request from ASI:One chat |
+
+Run it: `~/fetch-hello/.venv/bin/python agent/verifier_agent.py` (Python 3.12, uagents 0.26.1; `AGENT_SEED` in `.env`). Category: Innovation Lab.
+
+## Run it yourself
+
+```bash
+docker compose -f prepared/docker-compose.yml up -d        # OpenEMR 5.0.2 + MariaDB 10.4 (amd64)
+docker compose -f prepared/docker-compose.yml exec -T mysql mysql -uroot -proot openemr < prepared/seed.sql
+pnpm install
+node observer/observe.mjs          # → runs/spec.json
+node builder/build.mjs 1           # → runs/run1/index.html (clean room)
+node verifier/verify.mjs 1         # → runs/run1/score.json + feedback.json
+node builder/build.mjs 2 && node verifier/verify.mjs 2
+```
+
+## Built today vs. prepared
+
+**Built during the event (after 9 AM Sat Nov 7):** all code in this repo (`observer/`, `lib/`, `builder/`, `verifier/`, `agent/`, `fixture/`, `contract/`), the held-out ground-truth runs (`verifier/ground-truth/P.txt`, `N.txt`, captured ~11:05 AM against the original), every run in `runs/`, `wall.log`.
+
+**Prepared before the event and disclosed** (`prepared/`): the OpenEMR 5.0.2 Docker compose file and `seed.sql` (fake data; ICD-10 + HCPCS Level II only, no CPT), the recording `validate.webm`, Playwright `trace.zip` + `validate.har`, `validate-log.txt`, `validate-837.txt`, and the hidden answer key `answer-key.md`. On event day two of the answer key's four held-out rules did not fire in the original app and were replaced with verified behaviors — see `verifier/heldout-ground-truth.md`.
+
+## License
+
+GPLv3 (the answer key derives from OpenEMR's GPL source).

@@ -1,0 +1,14 @@
+{
+  "name": "resurrect",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "observe": "node observer/observe.mjs",
+    "build:run": "node builder/build.mjs",
+    "verify": "node verifier/verify.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.57.0"
+  }
+}

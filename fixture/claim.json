@@ -1,0 +1,17 @@
+{
+  "_about": "The one claim from the recording, as plain data (from prepared/seed.sql). Blank strings are blank on purpose.",
+  "claim_id": "1-1",
+  "status": "unbilled",
+  "patient": { "first_name": "Test", "last_name": "Patient", "dob": "", "sex": "", "street": "", "city": "", "state": "", "zip": "" },
+  "encounter": { "date": "TODAY", "reason": "Spike visit" },
+  "billing_facility": { "name": "Your Clinic Name Here", "npi": "", "tax_id": "", "street": "", "city": "", "state": "", "zip": "" },
+  "rendering_provider": { "first_name": "", "last_name": "Administrator", "npi": "" },
+  "payer": { "name": "Spike Health Plan", "payer_id": "", "street": "", "city": "", "state": "", "zip": "" },
+  "insured": { "relationship": "self", "first_name": "", "last_name": "", "policy_number": "", "dob": "", "sex": "", "street": "", "city": "", "state": "", "zip": "" },
+  "diagnoses": [ { "code": "Z00.00", "text": "General adult medical exam" } ],
+  "procedures": [
+    { "code": "A0425", "text": "Ground mileage", "fee": "0", "units": "1", "justify": "" },
+    { "code": "G0008", "text": "Admin influenza vaccine", "fee": "0", "units": "1", "justify": "" }
+  ],
+  "_enums": { "insured.relationship": ["self", "spouse", "child", "other"], "patient.sex": ["", "Male", "Female"], "insured.sex": ["", "Male", "Female"] }
+}

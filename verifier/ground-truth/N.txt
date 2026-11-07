@@ -1,0 +1,22 @@
+Validating Claim 1-1 existing claim status is not altered.
+Generating claim 1-1 for TEST PATIENT on 2026-11-07 19:06.
+*** Billing facility has no street.
+*** Billing facility has no city.
+*** Billing facility has no state.
+*** No billing facility NPI and/or ETIN.
+*** Missing insured last name.
+*** Missing insured first name.
+*** Missing policy number.
+*** Missing insured street.
+*** Missing insured city.
+*** Missing insured state.
+*** Missing insured DOB.
+*** Missing insured sex.
+*** Payer ID is missing for payer '*** Missing payer street.
+*** Missing payer city.
+*** Missing payer state.
+*** This claim has no charges!
+*** Rendering provider is billing under a group.
+*** Procedure 'A0425' is not justified!
+*** Procedure 'G0008' is not justified!
+

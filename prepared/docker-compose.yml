@@ -1,0 +1,35 @@
+# Resurrect spike — OpenEMR 5.0.2 (amd64, via OrbStack/Rosetta) + MariaDB 10.4
+# Throwaway: nothing here goes into the Nov 7 event repo.
+services:
+  mysql:
+    image: mariadb:10.4
+    platform: linux/amd64
+    restart: unless-stopped
+    command: ['mysqld', '--character-set-server=utf8']
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - dbvol:/var/lib/mysql
+  openemr:
+    image: openemr/openemr:5.0.2
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - "8502:80"
+      - "8503:443"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_ROOT_PASS: root
+      MYSQL_USER: openemr
+      MYSQL_PASS: openemr
+      OE_USER: admin
+      OE_PASS: pass
+    volumes:
+      - logvol:/var/log
+      - sitevol:/var/www/localhost/htdocs/openemr/sites
+    depends_on:
+      - mysql
+volumes:
+  dbvol:
+  logvol:
+  sitevol:
