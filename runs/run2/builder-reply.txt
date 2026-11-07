@@ -1,0 +1,12 @@
+I implemented 25 validation rules (R01–R07, R09–R16, R18–R25, R31, R32). I haven't run the new `index.html`, so I don't yet know whether it fixes any of the 0/4 held-out checks. On the recorded claim it should still print the same log as the previous build.
+
+Changes from the previous build:
+- **R23 (billing under a group):** the claim data has no group flag, so the previous build used a page checkbox that was always on. Now the warning fires when the rendering provider's NPI is the same as the billing facility's NPI. Both are blank in the recording, so the recorded warning still prints.
+- **R07 (NPI and/or ETIN):** now fires if either the facility NPI or the tax id is missing. The spec says "neither", but the message wording says "and/or", and I went with the wording. On the recorded claim both are blank, so it prints either way.
+- **R24 (rendering-provider NPI):** a valid NPI is now any 10 digits; the previous build also required a check digit to pass. A test that enters a made-up 10-digit NPI will no longer get the "Skipping 2310B" line.
+- **Editing claim data:** changing a field no longer rebuilds the work queue, so it can't clear a ticked checkbox. The processing overlay also no longer blocks clicks.
+
+Rules left out on purpose:
+- **Zip checks (R08, R17):** every zip was blank in the recording and no zip message printed.
+- **Patient checks and filling insured fields from the patient when the relationship is "self" (R26, R27):** the recording contradicts the fill-in: the insured messages fired even though the patient had a name.
+- **R28–R30:** the claim data has nothing to test them against, or their wording is unknown.

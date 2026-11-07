@@ -8,7 +8,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'node:url';
-import { RULES, SCENARIOS } from './rules.mjs';
+import { RULES, SCENARIOS, PROBES } from './rules.mjs';
 import { cross, wall } from '../lib/wall.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -80,24 +80,28 @@ const missing = recorded.filter((l) => !fx.includes(norm(l)));
 // Behavioral equivalence: every *** line the original produced in each scenario, found in the rebuild's log.
 const gtLines = (f) => fs.readFileSync(ROOT + 'verifier/ground-truth/' + f + '.txt', 'utf8').split('\n').filter((l) => l.startsWith('***'))
   .flatMap((l) => l.split(/(?=\*\*\* )/)).map((l) => l.trim()).filter(Boolean);
-const equiv = {};
+const equiv = {}; const diffs = {};
+const myLines = (sc) => (logs[sc] || '').split('\n').flatMap((l) => l.split(/(?=\*\*\* )/)).map((l) => l.trim()).filter((l) => l.startsWith('***'));
 for (const sc of Object.keys(SCENARIOS)) {
-  const mine = (logs[sc] || '').split('\n').flatMap((l) => l.split(/(?=\*\*\* )/)).map(norm);
-  const gt = gtLines(sc); equiv[sc] = `${gt.filter((l) => mine.includes(norm(l))).length}/${gt.length}`;
+  const mine = myLines(sc), gt = gtLines(sc);
+  const missing = gt.filter((l) => !mine.map(norm).includes(norm(l))), extra = mine.filter((l) => !gt.map(norm).includes(norm(l)));
+  diffs[sc] = { setup: SCENARIOS[sc], original: gt, missing, extra, exact: !missing.length && !extra.length };
+  equiv[sc] = `${gt.length - missing.length}/${gt.length}${extra.length ? ` +${extra.length} extra` : ''}`;
 }
 const cnt = (s) => `${results.filter((r) => r.set === s && r.green).length}/${results.filter((r) => r.set === s).length}`;
-const score = { run: N, dir: DIR, when: new Date().toISOString(), feedback: cnt('feedback'), heldout: cnt('heldout'), recording_match: `${matched.length}/${recorded.length}`, equivalence: equiv, page_errors: errors.slice(0, 5), results, notes };
+const score = { run: N, dir: DIR, when: new Date().toISOString(), feedback: cnt('feedback'), heldout: cnt('heldout'), recording_match: `${matched.length}/${recorded.length}`, equivalence: equiv, probes_exact: `${PROBES.filter((p) => diffs[p].exact).length}/${PROBES.length}`, heldout_exact: `${['P','N'].filter((p) => diffs[p].exact).length}/2`, page_errors: errors.slice(0, 5), results, notes };
 fs.writeFileSync(`${DIR}/score.json`, JSON.stringify(score, null, 2));
 
 console.log('\nRULE  SET       SCEN     RESULT  NAME');
 for (const r of results) console.log(`${r.id.padEnd(5)} ${r.set.padEnd(9)} ${r.scenario.padEnd(8)} ${r.green ? 'GREEN ' : 'RED   '}  ${r.name}`);
-console.log(`\nfeedback: ${score.feedback}   held-out: ${score.heldout}   recording match: ${score.recording_match}   equivalence: ${JSON.stringify(equiv)}`);
+console.log(`\nfeedback: ${score.feedback}   held-out: ${score.heldout}   recording match: ${score.recording_match}   probes exact: ${score.probes_exact}   equivalence: ${JSON.stringify(equiv)}`);
 
 if (N) { // behavior-only feedback for the next run
   const fb = {
     from: 'verifier', run: N, summary: `feedback rules ${score.feedback}; ${matched.length} of ${recorded.length} recorded log lines reproduced`,
     failed_rules: RULES.filter((r) => r.set === 'feedback' && !results.find((x) => x.id === r.id).green).map((r) => ({ id: r.id, behavior: r.behavior })),
     recorded_lines_missing: missing,
+    probes: PROBES.map((p) => ({ probe: p, claim_data_changes: diffs[p].setup, original_app_printed: diffs[p].original, your_build_missed: diffs[p].missing, your_build_added: diffs[p].extra, exact_match: diffs[p].exact })),
     replay_problems: Object.values(notes).flat(),
     heldout_checks_passed: score.heldout,
     note: 'Held-out checks replay the same flow on claim data the recording did not show. Only their pass count crosses the wall; which checks failed is not disclosed.',

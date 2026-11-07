@@ -7,7 +7,12 @@ export const SCENARIOS = {
   fixture: {},                                                        // the recorded claim, unchanged
   P: { 'insured.relationship': 'child' },                             // patient is not the insured
   N: { 'billing_facility.npi': 'ABCDEFGHIJ', 'rendering_provider.npi': 'ABCDEFGHIJ' }, // 10 letters as NPI
+  // Training probes: run on the original during the event; their full results DO cross the wall as behavior.
+  T1: { 'insured.relationship': 'spouse', 'patient.dob': '1980-01-01', 'patient.sex': 'Female' },
+  T2: { 'billing_facility.npi': '1234567890', 'rendering_provider.npi': '1234567890' },
 };
+export const PROBES = ['fixture', 'T1', 'T2'];          // scenarios whose original output may cross
+export const HELDOUT = ['P', 'N'];                       // never described across the wall
 
 const has = (re) => (log) => re.test(log);
 export const RULES = [

@@ -1,0 +1,2 @@
+run 2: index.html 24877 bytes in 139 s — I implemented 25 validation rules (R01–R07, R09–R16, R18–R25, R31, R32). I haven't run the new `index.html`, so I don't yet know whether it fixes any of the 0/4 held-out checks. On the recorded claim 
+done
