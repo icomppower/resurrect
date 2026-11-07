@@ -2,3 +2,5 @@
 node_modules/
 runs/tmp/
 *.log.tmp
+*.log
+!wall.log

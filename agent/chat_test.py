@@ -1,11 +1,11 @@
 """Round-trip test of the Resurrect Verifier agent through Agentverse (same path ASI:One uses).
-usage: ~/fetch-hello/.venv/bin/python agent/chat_test.py "status" [timeout_s]"""
+usage: ~/fetch-hello/.venv/bin/python agent/chat_test.py "status" [timeout_s] [messages_to_wait_for]"""
 import asyncio, queue, sys, threading, time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from uuid import uuid4
 from uagents.registration import AlmanacApiRegistrationPolicy
-from uagents_core.contrib.protocols.chat import ChatAcknowledgement, ChatMessage, TextContent, chat_protocol_spec
+from uagents_core.contrib.protocols.chat import ChatAcknowledgement, ChatMessage, MetadataContent, TextContent, chat_protocol_spec
 from uagents_core.envelope import Envelope
 from uagents_core.identity import Identity
 from uagents_core.types import AgentEndpoint
@@ -27,6 +27,8 @@ class H(BaseHTTPRequestHandler):
 
 
 text, timeout = sys.argv[1], float(sys.argv[2]) if len(sys.argv) > 2 else 60
+want = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+got = 0
 threading.Thread(target=ThreadingHTTPServer(("0.0.0.0", PORT), H).serve_forever, daemon=True).start()
 asyncio.run(AlmanacApiRegistrationPolicy().register(me.address, me, [chat_protocol_spec.digest], [AgentEndpoint(url=f"http://localhost:{PORT}/submit", weight=1)]))
 t0 = time.time()
@@ -37,5 +39,8 @@ while time.time() - t0 < timeout:
     except queue.Empty: continue
     if isinstance(msg, ChatAcknowledgement): print(f"{time.time()-t0:5.1f}s ACK"); continue
     send_message_to_agent(TARGET, ChatAcknowledgement(timestamp=datetime.now(timezone.utc), acknowledged_msg_id=msg.msg_id), me)
-    print(f"{time.time()-t0:5.1f}s REPLY:\n" + "\n".join(c.text for c in msg.content if isinstance(c, TextContent)), flush=True)
-    if "Starting" not in msg.content[0].text and "Replaying" not in msg.content[0].text: break
+    got += 1
+    print(f"--- {time.time()-t0:5.1f}s MESSAGE {got}:\n" + "\n".join(c.text for c in msg.content if isinstance(c, TextContent)), flush=True)
+    for c in msg.content:
+        if isinstance(c, MetadataContent): print(f"    [card kind={c.metadata.get('card_kind')}: {c.metadata.get('card_payload')}]", flush=True)
+    if got >= want: break

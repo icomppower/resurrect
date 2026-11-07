@@ -1,0 +1,1 @@
+I implemented 27 validation rules: R01–R07, R09–R16, R18–R27, R31 and R32. I didn't open the page in a browser or rerun anything after writing `index.html`.

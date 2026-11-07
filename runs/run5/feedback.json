@@ -1,0 +1,108 @@
+{
+  "from": "verifier",
+  "run": 5,
+  "summary": "feedback rules 8/8; 22 of 22 recorded log lines reproduced",
+  "failed_rules": [],
+  "recorded_lines_missing": [],
+  "probes": [
+    {
+      "probe": "fixture",
+      "claim_data_changes": {},
+      "original_app_printed": [
+        "*** Billing facility has no NPI.",
+        "*** Billing facility has no street.",
+        "*** Billing facility has no city.",
+        "*** Billing facility has no state.",
+        "*** No billing facility NPI and/or ETIN.",
+        "*** Missing insured last name.",
+        "*** Missing insured first name.",
+        "*** Missing policy number.",
+        "*** Missing insured street.",
+        "*** Missing insured city.",
+        "*** Missing insured state.",
+        "*** Missing insured DOB.",
+        "*** Missing insured sex.",
+        "*** Payer ID is missing for payer '",
+        "*** Missing payer street.",
+        "*** Missing payer city.",
+        "*** Missing payer state.",
+        "*** This claim has no charges!",
+        "*** Rendering provider is billing under a group.",
+        "*** Skipping 2310B because ADMINISTRATOR, has invalid NPI.",
+        "*** Procedure 'A0425' is not justified!",
+        "*** Procedure 'G0008' is not justified!"
+      ],
+      "your_build_missed": [],
+      "your_build_added": [],
+      "exact_match": true
+    },
+    {
+      "probe": "T1",
+      "claim_data_changes": {
+        "insured.relationship": "spouse",
+        "patient.dob": "1980-01-01",
+        "patient.sex": "Female"
+      },
+      "original_app_printed": [
+        "*** Billing facility has no NPI.",
+        "*** Billing facility has no street.",
+        "*** Billing facility has no city.",
+        "*** Billing facility has no state.",
+        "*** No billing facility NPI and/or ETIN.",
+        "*** Missing insured last name.",
+        "*** Missing insured first name.",
+        "*** Missing policy number.",
+        "*** Payer ID is missing for payer '",
+        "*** Missing payer street.",
+        "*** Missing payer city.",
+        "*** Missing payer state.",
+        "*** Missing patient street.",
+        "*** Missing patient city.",
+        "*** Missing patient state.",
+        "*** This claim has no charges!",
+        "*** Rendering provider is billing under a group.",
+        "*** Skipping 2310B because ADMINISTRATOR, has invalid NPI.",
+        "*** Procedure 'A0425' is not justified!",
+        "*** Procedure 'G0008' is not justified!"
+      ],
+      "your_build_missed": [],
+      "your_build_added": [],
+      "exact_match": true
+    },
+    {
+      "probe": "T2",
+      "claim_data_changes": {
+        "billing_facility.npi": "1234567890",
+        "rendering_provider.npi": "1234567890"
+      },
+      "original_app_printed": [
+        "*** Billing facility has no street.",
+        "*** Billing facility has no city.",
+        "*** Billing facility has no state.",
+        "*** No billing facility NPI and/or ETIN.",
+        "*** Missing insured last name.",
+        "*** Missing insured first name.",
+        "*** Missing policy number.",
+        "*** Missing insured street.",
+        "*** Missing insured city.",
+        "*** Missing insured state.",
+        "*** Missing insured DOB.",
+        "*** Missing insured sex.",
+        "*** Payer ID is missing for payer '",
+        "*** Missing payer street.",
+        "*** Missing payer city.",
+        "*** Missing payer state.",
+        "*** This claim has no charges!",
+        "*** Rendering provider is billing under a group.",
+        "*** Procedure 'A0425' is not justified!",
+        "*** Procedure 'G0008' is not justified!"
+      ],
+      "your_build_missed": [],
+      "your_build_added": [],
+      "exact_match": true
+    }
+  ],
+  "replay_problems": [],
+  "heldout_checks_passed": "3/4",
+  "note": "Held-out checks replay the same flow on claim data the recording did not show. Only their pass count crosses the wall; which checks failed is not disclosed."
+}
