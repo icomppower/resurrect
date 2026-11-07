@@ -48,7 +48,9 @@ digits. The Verifier surfaces it as a divergence for a human to choose faithful 
 |---|---|---|
 | resurrect-verifier | `agent1qd2g8tfg3xfjmmnddlmz75rr5znealnttkataz58tjhxwh2hqs6txsgclsl` | Tells the Resurrect story in plain language, runs a live clean-room rebuild on request, and logs the human's faithful-vs-fixed decision |
 
-Chat with it from ASI:One (`@agent1qd2g… rebuild`). Plain-language flow:
+ASI:One handle: @resurrect (type @resurrect before every message)
+
+Chat with it from ASI:One (`@resurrect rebuild`). Plain-language flow:
 
 - `hi` / `help` → one-paragraph intro.
 - `rebuild` → one message (ASI:One shows only the agent's last reply per question) built from the best saved run (labelled with its run number): what was seen in the recording (rule counts and three examples, seen vs. guessed), the handoff to Claude Code (link to `wall.log`), the result (recording steps passed, test cases never shown, live link), and the human call as an interactive card (**Copy old / Keep fix**). The card also says "(or reply: copy old / keep fix)" in case the card doesn't render in the ASI:One web UI.
