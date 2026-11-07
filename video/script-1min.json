@@ -1,0 +1,7 @@
+[
+ {"id":"s1","text":"This is a 2018 medical billing app. We recorded six seconds of someone checking a claim for errors. That recording is all Resurrect gets."},
+ {"id":"s2","text":"Claude watches it and writes down thirty-two rules: twenty-four it saw happen, eight it's guessing. Only that list crosses a logged wall to Claude Code, which builds a brand-new app without ever seeing the original."},
+ {"id":"s3","text":"The rebuild reproduces all twenty-two lines of the old app's error log. Then we test it on cases it was never shown, like a child on a parent's insurance plan."},
+ {"id":"s4","text":"Every score is checked against the real old app. Run over run, it learns: zero of four hidden tests, then three of four."},
+ {"id":"s5","text":"The one miss is a bug in the old app. So Resurrect asks a human, right in A-S-I One: copy the old bug, or keep the fix? Record it. Resurrect rebuilds it, with proof."}
+]

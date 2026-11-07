@@ -4,3 +4,4 @@ runs/tmp/
 *.log.tmp
 *.log
 !wall.log
+video/out/
