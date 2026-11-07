@@ -99,7 +99,8 @@ if (N) { // behavior-only feedback for the next run
     failed_rules: RULES.filter((r) => r.set === 'feedback' && !results.find((x) => x.id === r.id).green).map((r) => ({ id: r.id, behavior: r.behavior })),
     recorded_lines_missing: missing,
     replay_problems: Object.values(notes).flat(),
-    note: 'Some scenarios are held out and not described here.',
+    heldout_checks_passed: score.heldout,
+    note: 'Held-out checks replay the same flow on claim data the recording did not show. Only their pass count crosses the wall; which checks failed is not disclosed.',
   };
   fs.writeFileSync(`${DIR}/feedback.json`, JSON.stringify(fb, null, 2));
   cross(`${DIR}/feedback.json`, 'verifier', 'builder', { run: N, feedback: score.feedback });

@@ -1,0 +1,11 @@
+INFO:     [resurrect-verifier]: Starting agent with address: agent1qd2g8tfg3xfjmmnddlmz75rr5znealnttkataz58tjhxwh2hqs6txsgclsl
+INFO:     [resurrect-verifier]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8001&address=agent1qd2g8tfg3xfjmmnddlmz75rr5znealnttkataz58tjhxwh2hqs6txsgclsl
+INFO:     [resurrect-verifier]: Starting server on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     [resurrect-verifier]: Starting mailbox client for https://agentverse.ai
+INFO:     [resurrect-verifier]: Manifest published successfully: AgentChatProtocol
+INFO:     [resurrect-verifier]: Agent registration status updated to active
+INFO:     [uagents.registration]: Registration on Almanac API successful
+WARNING:  [uagents.registration]: I do not have enough funds to register on Almanac contract
+WARNING:  [uagents.registration]: To enable contract registration, send funds to wallet address: fetch10jyd7l2twmldc8wnqqxrzghe7dpqund75vdkld
+WARNING:  [uagents.registration]: To register on testnet Almanac contract, create agent with 'Agent(..., network="testnet")'
+INFO:     [resurrect-verifier]: IN agent1qwzz6298… 'status'

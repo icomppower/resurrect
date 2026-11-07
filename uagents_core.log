@@ -1,0 +1,4 @@
+2026-11-07 11:09:36,257 uagents_core.utils.resolver INFO Got response looking up agent endpoint
+2026-11-07 11:09:36,564 uagents_core.utils.messages INFO Sent message to agent
+2026-11-07 11:09:37,614 uagents_core.utils.resolver INFO Got response looking up agent endpoint
+2026-11-07 11:09:37,929 uagents_core.utils.messages INFO Sent message to agent

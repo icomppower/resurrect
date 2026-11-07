@@ -1,0 +1,10 @@
+{
+  "from": "verifier",
+  "run": 1,
+  "summary": "feedback rules 8/8; 22 of 22 recorded log lines reproduced",
+  "failed_rules": [],
+  "recorded_lines_missing": [],
+  "replay_problems": [],
+  "heldout_checks_passed": "0/4",
+  "note": "Held-out checks replay the same flow on claim data the recording did not show. Only their pass count crosses the wall; which checks failed is not disclosed."
+}

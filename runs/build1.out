@@ -1,0 +1,1 @@
+run 1: index.html 24173 bytes in 136 s — 26 rules implemented in `index.html`: R01–R07, R09–R16, R18–R26, R31 and R32. I skipped R08 and R17 (zip checks) because those messages didn't appear in the recorded log even though both zips are blan
