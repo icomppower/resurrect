@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Claims Desk — Billing Queue</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --ink:#1d2433; --muted:#667085; --line:#d9dee7; --bg:#f3f5f8; --card:#fff;
+    --accent:#2f6f6a; --accent-2:#e8f2f1; --warn:#a34a1f; --chip:#eef1f6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+  header.app{display:flex;align-items:center;gap:16px;padding:10px 20px;background:#22303c;color:#e9eef3}
+  header.app h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.2px}
+  header.app .sub{color:#9fb0bf;font-size:12px}
+  main{display:grid;grid-template-columns:300px 1fr;gap:16px;padding:16px 20px;max-width:1400px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:14px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 8px;font-weight:600}
+  label.f{display:block;font-size:12px;color:var(--muted);margin:6px 0 2px}
+  input[type=text],select{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:5px;font:inherit;background:#fff}
+  button{font:inherit;padding:6px 11px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--accent)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .linkbtn{background:none;border:none;padding:2px 0;color:var(--accent);text-decoration:underline;cursor:pointer;display:block}
+  .crit{min-height:56px;background:var(--chip);border-radius:6px;padding:6px 8px;font-size:13px;white-space:pre-line}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+  .toolbar .margins{display:flex;gap:6px;align-items:center;margin-left:auto;font-size:12px;color:var(--muted)}
+  .toolbar .margins input{width:52px}
+  .notice{display:none;padding:8px 12px;border-radius:6px;background:#fff4e5;border:1px solid #f1c48a;color:var(--warn);margin-bottom:12px}
+  .claim{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:10px 14px;margin-bottom:10px}
+  .claim .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .claim .pname{font-weight:600;color:var(--accent)}
+  .claim .key{color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+  .claim .status{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--chip);text-transform:uppercase;letter-spacing:.5px}
+  .claim .sel{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .claim .sel input{width:18px;height:18px}
+  .claim table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  .claim td{padding:3px 6px;border-top:1px solid #eef0f4}
+  .claim td.grp{width:70px;color:var(--muted)}
+  .claim .prov{background:#fff5c2;padding:0 4px;border-radius:3px}
+  .claim .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--muted)}
+  .claim .meta select{width:auto}
+  .empty{color:var(--muted);padding:20px;text-align:center;border:1px dashed var(--line);border-radius:8px;background:#fff}
+  #logwrap{display:none}
+  #log{margin:0;padding:12px;background:#fff;border:1px solid var(--line);border-radius:6px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre;overflow:auto;max-height:420px;color:#000}
+  details.panel summary{cursor:pointer;font-weight:600}
+  .fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 14px;margin-top:8px}
+  .fields fieldset{border:1px solid var(--line);border-radius:6px;padding:6px 10px 10px;margin:0}
+  .fields legend{font-size:12px;font-weight:600;color:var(--accent);padding:0 4px}
+  .overlay{position:fixed;inset:0;background:rgba(20,28,38,.45);display:none;align-items:center;justify-content:center;z-index:50}
+  .overlay.show{display:flex}
+  #busy{pointer-events:none}
+  .modal{background:#fff;border-radius:10px;padding:18px 20px;width:min(440px,92vw);box-shadow:0 20px 50px rgba(0,0,0,.25)}
+  .modal h3{margin:0 0 8px;font-size:16px}
+  .modal p{margin:0 0 14px;color:var(--muted)}
+  .modal .row{justify-content:flex-end}
+  .busy{color:#fff;font-size:15px;letter-spacing:.4px}
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>Claims Desk · Billing Queue</h1>
+  <span class="sub">Select encounters ready to bill, validate, generate or clear claims</span>
+</header>
+
+<main>
+  <aside>
+    <section class="card">
+      <h2>Filter by</h2>
+      <label class="f" for="crit-field">Criterion</label>
+      <select id="crit-field">
+        <option value="dos">Date of Service</option>
+        <option value="doe">Date of Entry</option>
+        <option value="dob">Date of Billing</option>
+        <option value="type">Claim Type</option>
+        <option value="pname">Patient Name</option>
+        <option value="pid">Patient Id</option>
+        <option value="ins">Insurance Company</option>
+        <option value="enc">Encounter</option>
+        <option value="status">Billing Status</option>
+      </select>
+      <label class="f" for="crit-value">Value</label>
+      <input type="text" id="crit-value" placeholder="e.g. Today, 2026-11-05, Unbilled, All">
+      <div class="row" style="margin-top:8px">
+        <button id="crit-add">Add criterion</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Active criteria <button id="crit-clear" title="Clear criteria" style="float:right;padding:0 7px;font-size:12px">✕ clear</button></h2>
+      <div class="crit" id="crit-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>Actions</h2>
+      <button class="linkbtn" id="update-list">Update List</button>
+      <button class="linkbtn" id="select-all">Select All</button>
+      <button class="linkbtn" id="view-log">View Log</button>
+      <button class="linkbtn" id="clear-log">Clear Log</button>
+    </section>
+  </aside>
+
+  <section>
+    <div class="toolbar">
+      <button class="primary" id="btn-x12">Generate X12 837…</button>
+      <button id="btn-hcfa">Generate CMS 1500…</button>
+      <button id="btn-clear">Mark as Cleared</button>
+      <button id="btn-reopen">Re-Open</button>
+      <span class="margins">CMS 1500 margins — Left <input type="text" id="m-left" value="24"> Top <input type="text" id="m-top" value="20"></span>
+    </div>
+
+    <div class="notice" id="notice"></div>
+
+    <div id="queue"></div>
+
+    <section class="card" id="logwrap">
+      <h2>Processing log</h2>
+      <pre id="log"></pre>
+    </section>
+
+    <section class="card">
+      <details class="panel" open>
+        <summary>Claim data (edit before validating)</summary>
+        <div class="fields" id="fields"></div>
+      </details>
+    </section>
+  </section>
+</main>
+
+<div class="overlay" id="confirm">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <h3 id="confirm-title">Generate claims</h3>
+    <p id="confirm-text"></p>
+    <div class="row">
+      <button id="btn-cancel">Cancel</button>
+      <button id="btn-validate">Validate only (dry run)</button>
+      <button class="primary" id="btn-generate">Generate &amp; mark billed</button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="busy"><div class="busy">Processing…</div></div>
+
+<script>
+/* ---------- embedded claim data (from claim.json) ---------- */
+const CLAIM_SOURCE = {
+  "claim_id": "1-1",
+  "status": "unbilled",
+  "patient": { "first_name": "Test", "last_name": "Patient", "dob": "", "sex": "", "street": "", "city": "", "state": "", "zip": "" },
+  "encounter": { "date": "TODAY", "reason": "Spike visit" },
+  "billing_facility": { "name": "Your Clinic Name Here", "npi": "", "tax_id": "", "street": "", "city": "", "state": "", "zip": "" },
+  "rendering_provider": { "first_name": "", "last_name": "Administrator", "npi": "" },
+  "payer": { "name": "Spike Health Plan", "payer_id": "", "street": "", "city": "", "state": "", "zip": "" },
+  "insured": { "relationship": "self", "first_name": "", "last_name": "", "policy_number": "", "dob": "", "sex": "", "street": "", "city": "", "state": "", "zip": "" },
+  "diagnoses": [ { "code": "Z00.00", "text": "General adult medical exam" } ],
+  "procedures": [
+    { "code": "A0425", "text": "Ground mileage", "fee": "0", "units": "1", "justify": "" },
+    { "code": "G0008", "text": "Admin influenza vaccine", "fee": "0", "units": "1", "justify": "" }
+  ]
+};
+const ENUMS = { "insured.relationship": ["self", "spouse", "child", "other"], "patient.sex": ["", "Male", "Female"], "insured.sex": ["", "Male", "Female"] };
+
+const pad = n => String(n).padStart(2, "0");
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const stamp = d => `${ymd(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const TODAY = ymd(new Date());
+
+const claim = JSON.parse(JSON.stringify(CLAIM_SOURCE));
+if (claim.encounter.date === "TODAY") claim.encounter.date = TODAY;
+
+const selected = new Set();
+let lastLog = "";
+let criteria = [];
+const CRIT_LABEL = { dos:"Date of Service", doe:"Date of Entry", dob:"Date of Billing", type:"Claim Type",
+  pname:"Patient Name", pid:"Patient Id", ins:"Insurance Company", enc:"Encounter", status:"Billing Status" };
+const defaultCriteria = () => [{k:"dos", v:"Today"}, {k:"status", v:"Unbilled"}];
+criteria = defaultCriteria();
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const blank = v => String(v ?? "").trim() === "";
+const T = v => String(v ?? "").trim();
+
+/* ---------- claim data panel: one input per leaf, name = dotted path ---------- */
+function leaves(obj, prefix, out) {
+  for (const [k, v] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${k}` : k;
+    if (v && typeof v === "object") leaves(v, path, out); else out.push(path);
+  }
+  return out;
+}
+const getPath = (o, p) => p.split(".").reduce((a, k) => a == null ? a : a[k], o);
+function setPath(o, p, val) {
+  const ks = p.split("."); let cur = o;
+  for (let i = 0; i < ks.length - 1; i++) cur = cur[ks[i]];
+  cur[ks[ks.length-1]] = val;
+}
+function buildPanel() {
+  const groups = {};
+  for (const p of leaves(claim, "", [])) {
+    const parts = p.split(".");
+    const g = parts.length === 1 ? "claim" : (parts.length === 3 ? `${parts[0]} #${+parts[1]+1}` : parts[0]);
+    (groups[g] ||= []).push(p);
+  }
+  const host = $("#fields"); host.innerHTML = "";
+  for (const [g, paths] of Object.entries(groups)) {
+    const fs = document.createElement("fieldset");
+    fs.innerHTML = `<legend>${esc(g.replace(/_/g, " "))}</legend>`;
+    for (const p of paths) {
+      const id = "f-" + p.replace(/\./g, "-");
+      const lab = document.createElement("label"); lab.className = "f"; lab.htmlFor = id;
+      lab.textContent = p.split(".").pop().replace(/_/g, " ");
+      let el;
+      if (ENUMS[p]) {
+        el = document.createElement("select");
+        for (const o of ENUMS[p]) { const op = document.createElement("option"); op.value = o; op.textContent = o === "" ? "(blank)" : o; el.appendChild(op); }
+      } else { el = document.createElement("input"); el.type = "text"; }
+      el.name = p; el.id = id; el.value = getPath(claim, p);
+      // Keep the queue display in sync without destroying the checkbox the user may have ticked.
+      el.addEventListener("change", () => { setPath(claim, p, el.value); refreshQueueText(); });
+      fs.append(lab, el);
+    }
+    host.appendChild(fs);
+  }
+}
+/* Validation always reads the current panel values. */
+function readPanel() {
+  for (const el of document.querySelectorAll("#fields [name]")) setPath(claim, el.name, el.value);
+  return JSON.parse(JSON.stringify(claim));
+}
+function syncPanelField(p) { const el = document.querySelector(`#fields [name="${p}"]`); if (el) el.value = getPath(claim, p); }
+
+/* ---------- criteria & queue ---------- */
+function renderCriteria() {
+  $("#crit-list").textContent = criteria.length
+    ? criteria.map(c => `${CRIT_LABEL[c.k]} = ${c.v}`).join("\n")
+    : "(no criteria — all claims)";
+}
+function matches(c) {
+  const name = `${c.patient.first_name} ${c.patient.last_name}`.toLowerCase();
+  const [pid, enc] = String(c.claim_id).split("-");
+  for (const {k, v} of criteria) {
+    const val = String(v).trim(), lv = val.toLowerCase();
+    if (k === "dos" || k === "doe") {
+      const want = lv === "today" ? TODAY : val;
+      if (lv !== "all" && lv !== "any" && c.encounter.date !== want) return false;
+    } else if (k === "dob") {
+      if (lv !== "all" && lv !== "any" && String(c.status).toLowerCase() === "unbilled") return false;
+    } else if (k === "status") {
+      if (lv !== "all" && lv !== "any" && String(c.status).toLowerCase() !== lv) return false;
+    } else if (k === "pname") { if (!name.includes(lv)) return false; }
+    else if (k === "pid") { if (pid !== val) return false; }
+    else if (k === "enc") { if (enc !== val && c.claim_id !== val) return false; }
+    else if (k === "ins") { if (!String(c.payer.name).toLowerCase().includes(lv)) return false; }
+    else if (k === "type") { if (!["all","any","electronic","x12","primary"].includes(lv)) return false; }
+  }
+  return true;
+}
+const provDisplay = c => `${c.rendering_provider.last_name}${c.rendering_provider.first_name ? ", " + c.rendering_provider.first_name : ""}`;
+function renderQueue() {
+  const q = $("#queue");
+  const list = [claim].filter(matches);
+  if (!list.length) { q.innerHTML = `<div class="empty">No claims match the current criteria.</div>`; updateToolbar(); return; }
+  q.innerHTML = list.map(c => {
+    const prov = provDisplay(c);
+    const procRows = c.procedures.map((p, i) => `<tr><td class="grp">${i === 0 ? "HCPCS" : ""}</td><td>${esc(p.code)}</td><td>${esc(p.text)}</td><td><span class="prov">${esc(prov)}</span></td><td class="d">${esc(c.encounter.date)}</td></tr>`).join("");
+    const dxRows = c.diagnoses.map((d, i) => `<tr><td class="grp">${i === 0 ? "ICD10" : ""}</td><td>${esc(d.code)}</td><td>${esc(d.text)}</td><td><span class="prov">${esc(prov)}</span></td><td class="d">${esc(c.encounter.date)}</td></tr>`).join("");
+    return `<article class="claim">
+      <div class="top">
+        <span class="pname">${esc(c.patient.first_name)} ${esc(c.patient.last_name)}</span>
+        <span class="key">(${esc(c.claim_id)})</span>
+        <span class="status">${esc(c.status)}</span>
+        <span class="encinfo" style="color:var(--muted);font-size:12px">Encounter ${esc(c.encounter.date)} · ${esc(c.encounter.reason)}</span>
+        <label class="sel">select <input type="checkbox" name="claims[${esc(c.claim_id)}]" ${selected.has(c.claim_id) ? "checked" : ""}></label>
+      </div>
+      <div class="meta">
+        <span>Bill to: <select class="billto"><option>primary: ${esc(c.payer.name)}</option></select></span>
+        <span>X12 partner: <select><option>Spike Clearinghouse</option></select></span>
+      </div>
+      <table>${procRows}${dxRows}</table>
+    </article>`;
+  }).join("");
+  q.querySelectorAll('input[type=checkbox][name^="claims["]').forEach(cb => {
+    cb.addEventListener("change", () => {
+      const id = cb.name.slice(7, -1);
+      cb.checked ? selected.add(id) : selected.delete(id);
+      updateToolbar();
+    });
+  });
+  updateToolbar();
+}
+/* Light refresh of labels after panel edits; the list itself is rebuilt only on Update List. */
+function refreshQueueText() {
+  const art = document.querySelector("#queue .claim"); if (!art) return;
+  art.querySelector(".pname").textContent = `${claim.patient.first_name} ${claim.patient.last_name}`;
+  art.querySelector(".status").textContent = claim.status;
+  art.querySelector(".encinfo").textContent = `Encounter ${claim.encounter.date} · ${claim.encounter.reason}`;
+  art.querySelector(".billto").innerHTML = `<option>primary: ${esc(claim.payer.name)}</option>`;
+}
+function visibleSelected() {
+  return [...document.querySelectorAll('#queue input[name^="claims["]:checked')].map(cb => cb.name.slice(7, -1));
+}
+function updateToolbar() {
+  const sel = visibleSelected();
+  const anyBilled = sel.some(id => id === claim.claim_id && String(claim.status).toLowerCase() !== "unbilled");
+  // No selection: both buttons look enabled. With a selection, Re-Open only applies to billed/cleared claims.
+  $("#btn-reopen").disabled = sel.length > 0 && !anyBilled;
+}
+function notice(msg) {
+  const n = $("#notice");
+  if (!msg) { n.style.display = "none"; return; }
+  n.textContent = msg; n.style.display = "block";
+}
+
+/* ---------- validation / claim generation ---------- */
+/* An NPI is usable when it is exactly 10 digits. */
+const npiValid = npi => /^\d{10}$/.test(T(npi));
+
+/* QUIRK (observed): the payer name inside the payer-ID message resolves empty even though the
+   payer has a name; the lookup reads a separate, unpopulated field. */
+const payerNameForIdMessage = c => T(c.payer.payer_name_on_file);
+
+function buildClaimLog(c, validateOnly, now) {
+  let out = "";
+  const line = m => { out += m + "\n"; };
+  const id = c.claim_id;
+
+  if (validateOnly) line(`Validating Claim ${id} existing claim status is not altered.`);                  // R01
+  line(`Generating claim ${id} for ${`${T(c.patient.first_name)} ${T(c.patient.last_name)}`.trim().toUpperCase()} on ${stamp(now)}.`); // R02
+
+  const bf = c.billing_facility;
+  if (blank(bf.npi))    line("*** Billing facility has no NPI.");                                             // R03
+  if (blank(bf.street)) line("*** Billing facility has no street.");                                          // R04
+  if (blank(bf.city))   line("*** Billing facility has no city.");                                            // R05
+  if (blank(bf.state))  line("*** Billing facility has no state.");                                           // R06
+  // R07: "NPI and/or ETIN" — the 837 needs both identifiers; fires when either is missing
+  // (probe T2: still printed with an NPI but no tax id).
+  if (blank(bf.npi) || blank(bf.tax_id)) line("*** No billing facility NPI and/or ETIN.");
+  // R08 / R17 not implemented: zips were blank in the recording and no zip message printed.
+
+  // R09-R16 (+R26): insured name and policy number are always checked on the subscriber record.
+  // The insured address/DOB/sex are only sent (and checked) when the patient IS the subscriber
+  // (relationship 'self'); otherwise the patient gets a separate loop checked below (R27).
+  const ins = c.insured;
+  const isSelf = T(ins.relationship).toLowerCase() === "self" || blank(ins.relationship);
+  if (blank(ins.last_name))     line("*** Missing insured last name.");
+  if (blank(ins.first_name))    line("*** Missing insured first name.");
+  if (blank(ins.policy_number)) line("*** Missing policy number.");
+  if (isSelf) {
+    if (blank(ins.street))      line("*** Missing insured street.");
+    if (blank(ins.city))        line("*** Missing insured city.");
+    if (blank(ins.state))       line("*** Missing insured state.");
+    if (blank(ins.dob))         line("*** Missing insured DOB.");
+    if (blank(ins.sex))         line("*** Missing insured sex.");
+  }
+
+  const py = c.payer;
+  if (blank(py.payer_id)) {                                                                                  // R18
+    const nm = payerNameForIdMessage(c);
+    if (nm) line(`*** Payer ID is missing for payer '${nm}'.`);
+    else out += "*** Payer ID is missing for payer '";   // quirk: no closing quote, no newline
+  }
+  if (blank(py.street)) line("*** Missing payer street.");                                                   // R19
+  if (blank(py.city))   line("*** Missing payer city.");                                                     // R20
+  if (blank(py.state))  line("*** Missing payer state.");                                                    // R21
+
+  // R27: patient loop, only when the patient is not the subscriber (observed in probe T1:
+  // printed after the payer checks, before the charges check). Zip is not checked.
+  if (!isSelf) {
+    const pt = c.patient;
+    if (blank(pt.last_name))  line("*** Missing patient last name.");
+    if (blank(pt.first_name)) line("*** Missing patient first name.");
+    if (blank(pt.street))     line("*** Missing patient street.");
+    if (blank(pt.city))       line("*** Missing patient city.");
+    if (blank(pt.state))      line("*** Missing patient state.");
+    if (blank(pt.dob))        line("*** Missing patient DOB.");
+    if (blank(pt.sex))        line("*** Missing patient sex.");
+  }
+
+  const procs = c.procedures.filter(p => !blank(p.code));
+  const total = procs.reduce((s, p) => s + (parseFloat(String(p.fee).replace(/[$,\s]/g, "")) || 0) , 0);
+  if (total === 0) line("*** This claim has no charges!");                                                   // R22
+
+  // R23: the provider bills under the group when its NPI is the billing facility's NPI
+  // (the claim data carries no separate flag; with both blank they match, as recorded).
+  const rp = c.rendering_provider;
+  if (T(rp.npi) === T(bf.npi)) line("*** Rendering provider is billing under a group.");
+  if (!npiValid(rp.npi)) {                                                                                   // R24
+    const nm = `${T(rp.last_name).toUpperCase()}, ${T(rp.first_name).toUpperCase()}`.trim();
+    line(`*** Skipping 2310B because ${nm} has invalid NPI.`);
+  }
+
+  for (const p of procs) {                                                                                   // R25
+    if (blank(p.justify)) line(`*** Procedure '${T(p.code)}' is not justified!`);
+  }
+  return out;
+}
+
+let pendingKind = "x12";
+function startGeneration(kind) {
+  const sel = visibleSelected();
+  if (!sel.length) { notice("Select at least one claim before generating or validating."); return; }  // R31
+  notice("");
+  pendingKind = kind;
+  $("#confirm-title").textContent = kind === "x12" ? "Generate X12 837 claims" : "Generate CMS 1500 claims";
+  $("#confirm-text").textContent = `${sel.length} claim(s) selected. Run a dry-run validation (status unchanged), or generate the ${kind === "x12" ? "X12 file" : "PDF forms"} and mark the claims billed.`;
+  $("#confirm").classList.add("show");
+}
+function runBatch(validateOnly) {
+  $("#confirm").classList.remove("show");
+  const c = readPanel();
+  const sel = visibleSelected();
+  const now = new Date();
+  let text = "";
+  // R32: nothing aborts the run; every check runs and each failure is listed.
+  for (const id of sel) if (id === c.claim_id) text += buildClaimLog(c, validateOnly, now);
+  text += "\n"; // trailing blank line
+  if (!validateOnly) {
+    claim.status = "billed"; syncPanelField("status");
+    if (pendingKind === "x12") offerFile(c, now);
+  }
+  lastLog = text;
+  $("#busy").classList.add("show");
+  showLog();
+  setTimeout(() => { $("#busy").classList.remove("show"); if (!validateOnly) renderQueue(); }, 250);
+}
+function offerFile(c, now) {
+  const body = `ISA*00*          *00*          *ZZ*SENDER         *ZZ*SPIKECH        *${ymd(now).slice(2).replace(/-/g,"")}*${pad(now.getHours())}${pad(now.getMinutes())}*^*00501*000000001*0*P*:~\nCLM*${c.claim_id}*0***11:B:1*Y*A*Y*Y~\n`;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([body], {type:"text/plain"}));
+  a.download = `claim-${c.claim_id}.x12`; a.textContent = "Download generated X12 file";
+  const n = $("#notice"); n.innerHTML = ""; n.appendChild(a); n.style.display = "block";
+}
+function showLog() {
+  $("#log").textContent = lastLog;
+  $("#logwrap").style.display = "block";
+}
+
+/* ---------- wiring ---------- */
+$("#btn-x12").addEventListener("click", () => startGeneration("x12"));
+$("#btn-hcfa").addEventListener("click", () => startGeneration("hcfa"));
+$("#btn-validate").addEventListener("click", () => runBatch(true));
+$("#btn-generate").addEventListener("click", () => runBatch(false));
+$("#btn-cancel").addEventListener("click", () => $("#confirm").classList.remove("show"));
+$("#btn-clear").addEventListener("click", () => {
+  const sel = visibleSelected();
+  if (!sel.length) { notice("Select at least one claim to mark as cleared."); return; }
+  notice("");
+  if (sel.includes(claim.claim_id)) { claim.status = "cleared"; syncPanelField("status"); selected.delete(claim.claim_id); }
+  renderQueue();
+});
+$("#btn-reopen").addEventListener("click", () => {
+  const sel = visibleSelected();
+  if (!sel.length) { notice("Select at least one billed claim to re-open."); return; }
+  notice("");
+  if (sel.includes(claim.claim_id)) { claim.status = "unbilled"; syncPanelField("status"); }
+  renderQueue();
+});
+$("#view-log").addEventListener("click", showLog);
+$("#clear-log").addEventListener("click", () => { lastLog = ""; $("#log").textContent = ""; });
+$("#select-all").addEventListener("click", () => {
+  document.querySelectorAll('#queue input[name^="claims["]').forEach(cb => { cb.checked = true; selected.add(cb.name.slice(7, -1)); });
+  updateToolbar();
+});
+$("#update-list").addEventListener("click", () => { readPanel(); renderQueue(); });
+$("#crit-add").addEventListener("click", () => {
+  const k = $("#crit-field").value, v = $("#crit-value").value.trim();
+  if (!v) { notice("Enter a value for the criterion."); return; }
+  notice("");
+  criteria = criteria.filter(c => c.k !== k).concat({k, v});
+  $("#crit-value").value = "";
+  renderCriteria(); readPanel(); renderQueue();
+});
+$("#crit-clear").addEventListener("click", () => { criteria = []; renderCriteria(); readPanel(); renderQueue(); });
+
+buildPanel();
+renderCriteria();
+renderQueue();
+</script>
+</body>
+</html>

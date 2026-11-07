@@ -1,0 +1,1 @@
+run 3: index.html 25824 bytes in 122 s — 27 validation rules: R01–R07, R09–R16, R18–R27, R31 and R32. I haven't run the verifier on the new `index.html`. The main change makes the insured address, DOB and sex checks run only when the relatio
