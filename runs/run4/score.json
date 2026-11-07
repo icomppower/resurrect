@@ -1,0 +1,111 @@
+{
+  "run": 4,
+  "dir": "/Volumes/New Volume/projects/resurrect/runs/run4",
+  "when": "2026-11-07T19:17:20.372Z",
+  "feedback": "8/8",
+  "heldout": "3/4",
+  "recording_match": "22/22",
+  "equivalence": {
+    "fixture": "22/22",
+    "P": "22/22",
+    "N": "20/20 +1 extra",
+    "T1": "20/20",
+    "T2": "20/20"
+  },
+  "probes_exact": "3/3",
+  "heldout_exact": "1/2",
+  "page_errors": [],
+  "results": [
+    {
+      "id": "F1",
+      "set": "feedback",
+      "scenario": "fixture",
+      "name": "billing facility NPI required",
+      "green": true
+    },
+    {
+      "id": "F2",
+      "set": "feedback",
+      "scenario": "fixture",
+      "name": "rendering provider NPI",
+      "green": true
+    },
+    {
+      "id": "F3",
+      "set": "feedback",
+      "scenario": "fixture",
+      "name": "payer ID required",
+      "green": true
+    },
+    {
+      "id": "F4",
+      "set": "feedback",
+      "scenario": "fixture",
+      "name": "policy number required",
+      "green": true
+    },
+    {
+      "id": "F5",
+      "set": "feedback",
+      "scenario": "fixture",
+      "name": "insured DOB required",
+      "green": true
+    },
+    {
+      "id": "F6",
+      "set": "feedback",
+      "scenario": "fixture",
+      "name": "claim must have charges",
+      "green": true
+    },
+    {
+      "id": "F7",
+      "set": "feedback",
+      "scenario": "fixture",
+      "name": "procedure must be justified",
+      "green": true
+    },
+    {
+      "id": "F8",
+      "set": "feedback",
+      "scenario": "fixture",
+      "name": "insured sex required",
+      "green": true
+    },
+    {
+      "id": "H1",
+      "set": "heldout",
+      "scenario": "P",
+      "name": "patient DOB when patient is not the insured",
+      "green": true
+    },
+    {
+      "id": "H2",
+      "set": "heldout",
+      "scenario": "P",
+      "name": "patient sex when patient is not the insured",
+      "green": true
+    },
+    {
+      "id": "H3",
+      "set": "heldout",
+      "scenario": "P",
+      "name": "patient address when patient is not the insured",
+      "green": true
+    },
+    {
+      "id": "H4",
+      "set": "heldout",
+      "scenario": "N",
+      "name": "a 10-character NPI is accepted (length check only)",
+      "green": false
+    }
+  ],
+  "notes": {
+    "fixture": [],
+    "P": [],
+    "N": [],
+    "T1": [],
+    "T2": []
+  }
+}

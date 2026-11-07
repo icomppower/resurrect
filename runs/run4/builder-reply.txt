@@ -1,0 +1,1 @@
+27 validation rules implemented. Rules not implemented: R08 and R17 (the zip checks didn't fire in the recording), and R28–R30 (the claim data has nothing to drive them). I haven't run the page; the verifier's next run will confirm it.

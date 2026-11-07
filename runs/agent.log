@@ -9,3 +9,4 @@ WARNING:  [uagents.registration]: I do not have enough funds to register on Alma
 WARNING:  [uagents.registration]: To enable contract registration, send funds to wallet address: fetch10jyd7l2twmldc8wnqqxrzghe7dpqund75vdkld
 WARNING:  [uagents.registration]: To register on testnet Almanac contract, create agent with 'Agent(..., network="testnet")'
 INFO:     [resurrect-verifier]: IN agent1qwzz6298… 'status'
+INFO:     [resurrect-verifier]: IN agent1qwzz6298… 'loop'

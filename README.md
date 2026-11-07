@@ -27,7 +27,20 @@ recording ──► Observer ──spec.json──► │ WALL │ ──► cle
 
 ## Results
 
-See the scoreboard in `runs/` (`runs/runN/score.json`) — filled in below during the event.
+Real numbers from `runs/runN/score.json` (Observer: Claude, 32 rules, 24 observed / 8 inferred; every Builder run
+is a fresh isolated `claude -p`, ~2 min each):
+
+| Run | Feedback that crossed the wall | Feedback rules | Recording match | Probes exact | **Held-out** |
+|---|---|---|---|---|---|
+| 1 | — (spec only) | 8/8 | 22/22 | 1/3 | **0/4** |
+| 2 | run 1 result (all green) + held-out count | 8/8 | 22/22 | 2/3 | **0/4** |
+| 3 | + original app's output on 2 training probes | 8/8 | 22/22 | 3/3 | **3/4** |
+| 4 | run 3 result — triggered from chat via the Fetch.ai agent (`loop`) | 8/8 | 22/22 | 3/3 | **3/4** |
+
+Runs 1–2 show the failure mode: when the only feedback is the recording, a perfect replay teaches nothing. Run 3
+learned "patient ≠ insured" from one spouse probe and generalized to the held-out child case (DOB/sex it never saw
+fire). The remaining red, H4, is the original's bug: 5.0.2 accepts any 10 characters as an NPI; the rebuild requires
+digits. The Verifier surfaces it as a divergence for a human to choose faithful vs. fixed.
 
 ## Fetch.ai agent
 
