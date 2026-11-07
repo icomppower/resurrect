@@ -36,6 +36,7 @@ is a fresh isolated `claude -p`, ~2 min each):
 | 2 | run 1 result (all green) + held-out count | 8/8 | 22/22 | 2/3 | **0/4** |
 | 3 | + original app's output on 2 training probes | 8/8 | 22/22 | 3/3 | **3/4** |
 | 4 | run 3 result — triggered from chat via the Fetch.ai agent (`loop`) | 8/8 | 22/22 | 3/3 | **3/4** |
+| 5 | run 4 result — `rebuild live` from chat (Agentverse round trip) | 8/8 | 22/22 | 3/3 | **3/4** |
 
 Runs 1–2 show the failure mode: when the only feedback is the recording, a perfect replay teaches nothing. Run 3
 learned "patient ≠ insured" from one spouse probe and generalized to the held-out child case (DOB/sex it never saw
